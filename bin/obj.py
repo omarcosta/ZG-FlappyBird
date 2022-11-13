@@ -1,4 +1,5 @@
 import pygame
+# from colors import Color
 speed_obj = 2
 
 class Obj(pygame.sprite.Sprite): # Criar objetos sprites com imagens
@@ -13,22 +14,6 @@ class Obj(pygame.sprite.Sprite): # Criar objetos sprites com imagens
         self.frame = 1
         self.tick = 0
 
-#     def drawing(self, window):
-#         self.group.draw(window)
-    
-#     def animation(self, obj, frames, tick = 8, extension = "png"):
-#         self.tick += 1
-
-#         if self.tick >= tick: # A cada 8 frames (padrão) vai trocar a imagem
-#             self.tick = 0
-#             self.frame += 1
-
-#         if self.frame >= frames:
-#             self.frame = 1
-
-#         # O nome das imagens devem seguir o padrão img1, img2, img3 ...
-#         self.sprite.image = pygame.image.load(f'assets/sprites/{obj}{self.frame}.{extension}') 
-
 class Pipe(Obj):
 
     def __init__(self, img, x, y, *groups):
@@ -38,9 +23,7 @@ class Pipe(Obj):
         self.move()
 
     def move(self):
-
         self.rect[0] -= speed_obj 
-
         if self.rect[0] <= -100:
             self.kill()
 
@@ -63,44 +46,77 @@ class Coin(Obj):
         self.tick = (self.tick + 1) % repete
         self.image = pygame.image.load(f'assets/{str(self.tick)}.png')     
 
+class Bird(Obj):
 
-# # class Bee(Obj):
+    def __init__(self, img, x, y, *groups):
+        super().__init__(img, x, y, *groups)
 
-#     def __init__(self, image, x, y):
-#         super().__init__(image, x, y)
+        self.tick = 0
+        self.speed = 4
+        self.gravity = 1
+        self.score = 0
+        self.wing = pygame.mixer.Sound("assets/sounds/wing.ogg")
+        self.point = pygame.mixer.Sound("assets/sounds/point.ogg")
+        self.hit = pygame.mixer.Sound("assets/sounds/hit.ogg")
+        self.play = True
 
-#         self.sound_pts = pygame.mixer.Sound("assets/sounds/score.ogg")
-#         self.sound_colision = pygame.mixer.Sound("assets/sounds/bateu.ogg")
-#         self.life = 3
-#         self.pts = 0
+    def update(self, *args):
+        self.move()
+        self.anim()
     
-#     def move_bee(self, event):
-#         if event.type == pygame.MOUSEMOTION:
-#             self.sprite.rect[0] = pygame.mouse.get_pos()[0] - 35 # Metade da largura da imagem
-#             self.sprite.rect[1] = pygame.mouse.get_pos()[1] - 29 # Metade da altura da imagem
+    def move(self):
+ 
+        self.speed += self.gravity
+        self.rect[1] += self.speed
 
-#     def colision(self, group, name):
-#         colison = pygame.sprite.spritecollide(self.sprite, group, True)
+        if self.speed >= 10:
+            self.speed = 10        
 
-#         if name == "Flower" and colison:
-#             self.pts += 1
-#             self.sound_pts.play()
+        if self.rect[1] >= 430:
+            self.rect[1] = 430
             
-#         elif name == "Spider" and colison:
-#             self.life -= 1
-#             self.sound_colision.play()
+        elif self.rect[1] <= 0:
+            self.rect[1] = 0
+            self.speed = 4       
 
-# class Text: 
-    
-#     def __init__(self, size, text, color = (255,255,255), fontfamily = "Arial bold"):
-#         self.font = pygame.font.SysFont(fontfamily, size)
-#         self.render = self.font.render(text, True,color)
+    def anim(self, repete = 4): 
+        self.tick = (self.tick + 1) % repete
+        self.image = pygame.image.load(f'assets/bird{str(self.tick)}.png')
 
-#     def draw(self, window, x, y): 
-#         window.blit(self.render, (x,y))
+    def colision_pipes(self, group): 
+        col = pygame.sprite.spritecollide(self, group, False)
+        if col:
+            self.play = False
+            self.hit.play()
+
+    def colision_coin(self, group): 
+        col = pygame.sprite.spritecollide(self, group, True)
+        if col:
+            self.score += 1
+            self.point.play()
     
-#     def update_text(self, text, color = (255,255,255)):
-#         self.render = self.font.render(text, True, color)
+    def events(self, event):
+        self.touch = False
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE and self.touch == False:
+                    self.speed -= 20
+                    self.wing.play()
+                    self.touch = True
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_SPACE:
+                self.touch = False
+
+class Text: 
+    
+    def __init__(self, size, text, color = (255,255,255)):
+        self.font = pygame.font.Font("assets/font/font.ttf", size)
+        self.render = self.font.render(text, True, color)
+
+    def draw(self, window, x, y): 
+        window.blit(self.render, (x,y))
+    
+    def update_text(self, text, color = (255,255,255)):
+        self.render = self.font.render(text, True, color)
 
     
 
